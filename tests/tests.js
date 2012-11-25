@@ -7,7 +7,7 @@ describe("When instantiating a Query", function () {
     expect(q.items instanceof Array).toBeTruthy();
   });
 
-  it("should add array to arguments", function() {
+  it("should add array to arguments", function () {
     expect(q.items.length).toBe(3);
   });
 
@@ -61,25 +61,25 @@ describe("When using 'where'", function () {
   });
 });
 
-describe("When using 'elementAt'", function() {
-  it("should return the item at the given index", function() {
-    expect(Query.from([1,2,3]).elementAt(1)).toBe(2);
+describe("When using 'elementAt'", function () {
+  it("should return the item at the given index", function () {
+    expect(Query.from([1, 2, 3]).elementAt(1)).toBe(2);
   });
 
-  it("should return undefined if the index doesn't exist", function() {
-    expect(Query.from([1,2,3]).elementAt(3)).toBeUndefined();
+  it("should return undefined if the index doesn't exist", function () {
+    expect(Query.from([1, 2, 3]).elementAt(3)).toBeUndefined();
   });
 
-  it("should allow default item to be passed in for item that doesn't exist", function() {
-    expect(Query.from([1,2,3]).elementAt(3, null)).toBeNull();
+  it("should allow default item to be passed in for item that doesn't exist", function () {
+    expect(Query.from([1, 2, 3]).elementAt(3, null)).toBeNull();
   });
 
-  it("should not return default item if returned item is falsy", function() {
-    expect(Query.from([2,1,0]).elementAt(2, null)).toBe(0);
+  it("should not return default item if returned item is falsy", function () {
+    expect(Query.from([2, 1, 0]).elementAt(2, null)).toBe(0);
   });
 
-  it("should return default item if index is less than 0", function() {
-    expect(Query.from([1,2,3]).elementAt(-1, 0)).toBe(0);
+  it("should return default item if index is less than 0", function () {
+    expect(Query.from([1, 2, 3]).elementAt(-1, 0)).toBe(0);
   });
 });
 
@@ -138,8 +138,8 @@ describe("When selecting 'first' item", function () {
     expect(Query.from([1, 2, 3]).first(function (item) { return item === 4; }, 0)).toBe(0);
   });
 
-  it("should allow you to just pass a default", function() {
-    expect(Query.from([1,2,3]).first(99)).toBe(1);
+  it("should allow you to just pass a default", function () {
+    expect(Query.from([1, 2, 3]).first(99)).toBe(1);
   });
 });
 
@@ -265,13 +265,13 @@ describe("When selecting distinct records", function () {
     expect(Query.from([1, 1, 2, 2, 3, 3]).distinct().count()).toBe(3);
   });
 
-  it("should allow an equality function", function() {
-    expect(Query.from([{ id: 1, name: "Joe Blow" }, { id: 1, name: "Joseph Blow"}]).distinct(function (a,b) { return a.id === b.id; }).count()).toBe(1);
+  it("should allow an equality function", function () {
+    expect(Query.from([{ id: 1, name: "Joe Blow" }, { id: 1, name: "Joseph Blow" }]).distinct(function (a, b) { return a.id === b.id; }).count()).toBe(1);
   });
 });
 
-describe("When adding an item to a Query", function() {
-  it("should return the query instance", function() {
+describe("When adding an item to a Query", function () {
+  it("should return the query instance", function () {
     var q = new Query();
     expect(q.add(1) === q).toBeTruthy();
   });
@@ -292,21 +292,21 @@ describe("When adding an item to a Query", function() {
   });
 });
 
-describe("When calling forEach", function() {
-  it("should call a method for each element", function() {
+describe("When calling forEach", function () {
+  it("should call a method for each element", function () {
     var counter = 0;
-    Query.from([1,2,3]).forEach(function() { counter++; });
+    Query.from([1, 2, 3]).forEach(function () { counter++; });
     expect(counter).toBe(3);
   });
 
-  it("should return the Query object", function() {
-    var q = Query.from([1,2,3]);
-    expect(q.forEach(function() { }) === q).toBeTruthy();
+  it("should return the Query object", function () {
+    var q = Query.from([1, 2, 3]);
+    expect(q.forEach(function () { }) === q).toBeTruthy();
   });
 
-  it("should run in the scope passed in", function() {
+  it("should run in the scope passed in", function () {
     var expected = {}, actual;
-    Query.from([1]).forEach(function() { actual = this; }, expected);
+    Query.from([1]).forEach(function () { actual = this; }, expected);
     expect(actual === expected).toBeTruthy();
   });
 });
@@ -316,331 +316,331 @@ describe("When unioning queries", function () {
     expect(Query.from([1, 2, 3]).union(Query.from([4, 5, 6])) instanceof Query).toBeTruthy();
   });
 
-  it("should combine results", function() {
-    expect(Query.from([1,2,3]).union(Query.from([4,5,6])).elementAt(5)).toBe(6);
+  it("should combine results", function () {
+    expect(Query.from([1, 2, 3]).union(Query.from([4, 5, 6])).elementAt(5)).toBe(6);
   });
 
-  it("should only return distinct results", function() {
-    expect(Query.from([1,2,3]).union(Query.from([3,4,5])).count()).toBe(5);
+  it("should only return distinct results", function () {
+    expect(Query.from([1, 2, 3]).union(Query.from([3, 4, 5])).count()).toBe(5);
   });
 
-  it("should except an array", function() {
-    expect(Query.from([1,2,3]).union([3,4,5]).count()).toBe(5);
+  it("should except an array", function () {
+    expect(Query.from([1, 2, 3]).union([3, 4, 5]).count()).toBe(5);
   });
 
-  it("should allow comparer function", function() {
-    expect(Query.from([{ id: 1, name: "Joe Blow" }]).union([{ id: 1, name: "Joseph Blow"}], function (a,b) { return a.id === b.id; }).count()).toBe(1);  
-  });
-});
-
-describe("When intersecting queries", function() {
-  it("should return a Query object", function() {
-    expect(Query.from([1,2,3]).intersect(Query.from([2,3,4])) instanceof Query).toBeTruthy();
-  });
-
-  it("should only return found items", function() {
-    expect(Query.from([1,2,3]).intersect(Query.from([2,3,4])).elementAt(1)).toBe(3);
-  });
-
-  it("should return distinct results with duplicates from the source", function() {
-    expect(Query.from([1,1,2]).intersect(Query.from([1])).count()).toBe(1);
-  });
-
-  it("should return distinct results from duplicates in the passed in query", function() {
-    expect(Query.from([1]).intersect(Query.from([1,1,2])).count()).toBe(1);
-  });
-
-  it("should accept an array as the passed in function", function() {
-    expect(Query.from([1,2,3]).intersect([2,3,4]).count()).toBe(2);
-  });
-
-  it("should allow comparer function", function() {
-    expect(Query.from([{ id: 1, name: "Joe Blow" }]).intersect([{ id: 1, name: "Joseph Blow"}], function (a,b) { return a.id === b.id; }).count()).toBe(1);  
-  });
-}); 
-
-describe("When diffing queries", function() {
-  it("should return a Query object", function() {
-    expect(Query.from([1,2,3]).diff(Query.from([2,3,4])) instanceof Query).toBeTruthy();
-  });
-
-  it("should return results that are not in both queries", function() {
-    expect(Query.from([1,2,3]).diff(Query.from([2,3,4])).elementAt(1)).toBe(4);
-  });
-
-  it("should return distinct results that are not in both queries", function() {
-    expect(Query.from([1,2,3]).diff(Query.from([2,3,4,4])).count()).toBe(2);
-  });
-
-  it("should allow comparer function", function() {
-    expect(Query.from([{ id: 1, name: "Joe Blow" }]).diff(Query.from([{ id: 1, name: "Joseph Blow"}, { id: 2, name: "Jane Doe" }]), function (a,b) { return a.id === b.id; }).count()).toBe(1);  
-  });
-
-  it("should allow arrays to be passed in", function() {
-    expect(Query.from([1,2,3]).diff([2,3,4]).count()).toBe(2);
+  it("should allow comparer function", function () {
+    expect(Query.from([{ id: 1, name: "Joe Blow" }]).union([{ id: 1, name: "Joseph Blow" }], function (a, b) { return a.id === b.id; }).count()).toBe(1);
   });
 });
 
-describe("When taking from query", function() {
-  it("should return a Query object", function() {
-    expect(Query.from([1,2,3]).take(1) instanceof Query).toBeTruthy();
+describe("When intersecting queries", function () {
+  it("should return a Query object", function () {
+    expect(Query.from([1, 2, 3]).intersect(Query.from([2, 3, 4])) instanceof Query).toBeTruthy();
+  });
+
+  it("should only return found items", function () {
+    expect(Query.from([1, 2, 3]).intersect(Query.from([2, 3, 4])).elementAt(1)).toBe(3);
+  });
+
+  it("should return distinct results with duplicates from the source", function () {
+    expect(Query.from([1, 1, 2]).intersect(Query.from([1])).count()).toBe(1);
+  });
+
+  it("should return distinct results from duplicates in the passed in query", function () {
+    expect(Query.from([1]).intersect(Query.from([1, 1, 2])).count()).toBe(1);
+  });
+
+  it("should accept an array as the passed in function", function () {
+    expect(Query.from([1, 2, 3]).intersect([2, 3, 4]).count()).toBe(2);
+  });
+
+  it("should allow comparer function", function () {
+    expect(Query.from([{ id: 1, name: "Joe Blow" }]).intersect([{ id: 1, name: "Joseph Blow" }], function (a, b) { return a.id === b.id; }).count()).toBe(1);
+  });
+});
+
+describe("When diffing queries", function () {
+  it("should return a Query object", function () {
+    expect(Query.from([1, 2, 3]).diff(Query.from([2, 3, 4])) instanceof Query).toBeTruthy();
+  });
+
+  it("should return results that are not in both queries", function () {
+    expect(Query.from([1, 2, 3]).diff(Query.from([2, 3, 4])).elementAt(1)).toBe(4);
+  });
+
+  it("should return distinct results that are not in both queries", function () {
+    expect(Query.from([1, 2, 3]).diff(Query.from([2, 3, 4, 4])).count()).toBe(2);
+  });
+
+  it("should allow comparer function", function () {
+    expect(Query.from([{ id: 1, name: "Joe Blow" }]).diff(Query.from([{ id: 1, name: "Joseph Blow" }, { id: 2, name: "Jane Doe" }]), function (a, b) { return a.id === b.id; }).count()).toBe(1);
+  });
+
+  it("should allow arrays to be passed in", function () {
+    expect(Query.from([1, 2, 3]).diff([2, 3, 4]).count()).toBe(2);
+  });
+});
+
+describe("When taking from query", function () {
+  it("should return a Query object", function () {
+    expect(Query.from([1, 2, 3]).take(1) instanceof Query).toBeTruthy();
   })
 
-  it("should return the number of items passed in", function() {
-    expect(Query.from([1,2,3]).take(1).count()).toBe(1);  
+  it("should return the number of items passed in", function () {
+    expect(Query.from([1, 2, 3]).take(1).count()).toBe(1);
   });
 
-  it("should not allow amounts returned to exceed length", function() {
-    expect(Query.from([1,2,3]).take(4).count()).toBe(3);
+  it("should not allow amounts returned to exceed length", function () {
+    expect(Query.from([1, 2, 3]).take(4).count()).toBe(3);
   });
 
-  it("should return items in order", function() {
-    expect(Query.from([1,2,3]).take(1).elementAt(0)).toBe(1);
+  it("should return items in order", function () {
+    expect(Query.from([1, 2, 3]).take(1).elementAt(0)).toBe(1);
   });
 });
 
-describe("When skipping from query", function() {
-  it("should return a Query object", function() {
-    expect(Query.from([1,2,3]).skip(1) instanceof Query).toBeTruthy();
+describe("When skipping from query", function () {
+  it("should return a Query object", function () {
+    expect(Query.from([1, 2, 3]).skip(1) instanceof Query).toBeTruthy();
   })
 
-  it("should skip the number of items passed in", function() {
-    expect(Query.from([1,2,3]).skip(1).count()).toBe(2);  
+  it("should skip the number of items passed in", function () {
+    expect(Query.from([1, 2, 3]).skip(1).count()).toBe(2);
   });
 
-  it("should return empty query if count exceed length", function() {
-    expect(Query.from([1,2,3]).skip(4).count()).toBe(0);
+  it("should return empty query if count exceed length", function () {
+    expect(Query.from([1, 2, 3]).skip(4).count()).toBe(0);
   });
 
-  it("should skip items in order", function() {
-    expect(Query.from([1,2,3]).skip(1).elementAt(0)).toBe(2);
-  });
-});
-
-describe("When taking while from query", function() {
-  it("should return a Query object", function() {
-    expect(Query.from([1,2,3]).takeWhile(function(item) { return item < 2; }) instanceof Query).toBeTruthy();
-  });
-
-  it("should return initial items that pass query", function() {
-    expect(Query.from([1,2,3]).takeWhile(function(item) { return item < 2; }).count()).toBe(1);
-  });
-
-  it("should return entire results if all pass", function() {
-    expect(Query.from([1,2,3]).takeWhile(function(item) { return item < 4; }).count()).toBe(3);
-  });
-
-  it("should not return later items that pass query", function() {
-    expect(Query.from([1,2,3,1]).takeWhile(function(item) { return item < 2; }).count()).toBe(1);
+  it("should skip items in order", function () {
+    expect(Query.from([1, 2, 3]).skip(1).elementAt(0)).toBe(2);
   });
 });
 
-describe("When skipping while from query", function() {
-  it("should return a Query object", function() {
-    expect(Query.from([1,2,3]).skipWhile(function(item) { return item < 2; }) instanceof Query).toBeTruthy();
+describe("When taking while from query", function () {
+  it("should return a Query object", function () {
+    expect(Query.from([1, 2, 3]).takeWhile(function (item) { return item < 2; }) instanceof Query).toBeTruthy();
   });
 
-  it("should skip initial items that pass query", function() {
-    expect(Query.from([1,2,3]).skipWhile(function(item) { return item < 2; }).count()).toBe(2);
+  it("should return initial items that pass query", function () {
+    expect(Query.from([1, 2, 3]).takeWhile(function (item) { return item < 2; }).count()).toBe(1);
   });
 
-  it("should skip entire results if all pass", function() {
-    expect(Query.from([1,2,3]).skipWhile(function(item) { return item < 4; }).count()).toBe(0);
+  it("should return entire results if all pass", function () {
+    expect(Query.from([1, 2, 3]).takeWhile(function (item) { return item < 4; }).count()).toBe(3);
   });
 
-  it("should not return later items that pass query", function() {
-    expect(Query.from([1,2,3,1]).skipWhile(function(item) { return item < 2; }).count()).toBe(3);
-  });
-});
-
-describe("When summing query", function() {
-  it("should return sum of all items", function() {
-    expect(Query.from([1,2,3]).sum()).toBe(6);
-  });
-
-  it("should allow passing in transform function", function() {
-    expect(Query.from([{ value: 1 }, { value: 2 }, { value: 3}]).sum(function (item) { return item.value; })).toBe(6);
+  it("should not return later items that pass query", function () {
+    expect(Query.from([1, 2, 3, 1]).takeWhile(function (item) { return item < 2; }).count()).toBe(1);
   });
 });
 
-describe("When averaging query", function() {
-  it("should return average of all items", function() {
-    expect(Query.from([1,2,3]).avg()).toBe(2);
+describe("When skipping while from query", function () {
+  it("should return a Query object", function () {
+    expect(Query.from([1, 2, 3]).skipWhile(function (item) { return item < 2; }) instanceof Query).toBeTruthy();
   });
 
-  it("should allow passing in transform function", function() {
-    expect(Query.from([{ value: 1 }, { value: 2 }, { value: 3}]).avg(function (item) { return item.value; })).toBe(2);
-  });
-});
-
-describe("When getting max of query", function() {
-  it("should return max item in query", function() {
-    expect(Query.from([1,5,4]).max()).toBe(5);
+  it("should skip initial items that pass query", function () {
+    expect(Query.from([1, 2, 3]).skipWhile(function (item) { return item < 2; }).count()).toBe(2);
   });
 
-  it("should allow passing in transform function", function() {
-    expect(Query.from([{ value: 1 }, { value: 2 }, { value: 3}]).max(function (item) { return item.value; })).toBe(3);
+  it("should skip entire results if all pass", function () {
+    expect(Query.from([1, 2, 3]).skipWhile(function (item) { return item < 4; }).count()).toBe(0);
+  });
+
+  it("should not return later items that pass query", function () {
+    expect(Query.from([1, 2, 3, 1]).skipWhile(function (item) { return item < 2; }).count()).toBe(3);
   });
 });
 
-describe("When getting min of query", function() {
-  it("should return min item in query", function() {
-    expect(Query.from([1,5,4]).min()).toBe(1);
+describe("When summing query", function () {
+  it("should return sum of all items", function () {
+    expect(Query.from([1, 2, 3]).sum()).toBe(6);
   });
 
-  it("should allow passing in transform function", function() {
-    expect(Query.from([{ value: 1 }, { value: 2 }, { value: 3}]).min(function (item) { return item.value; })).toBe(1);
-  });
-});
-
-describe("When calling contains", function() {
-  it("should return true if the item exists in the query", function() {
-    expect(Query.from([1,2,3]).contains(2)).toBeTruthy();
-  });
-
-  it("should return false if the item does not exist in the query", function() {
-    expect(Query.from([1,2,3]).contains(5)).toBeFalsy();
-  });
-
-  it("should allow a comparer function", function() {
-    expect(Query.from([{ id: 1, name: "Joseph Blow"}, { id: 2, name: "Jane Doe" }]).contains({ id: 1 }, function (a,b) { return a.id === b.id; })).toBeTruthy();
+  it("should allow passing in transform function", function () {
+    expect(Query.from([{ value: 1 }, { value: 2 }, { value: 3 }]).sum(function (item) { return item.value; })).toBe(6);
   });
 });
 
-describe("When using defaultIfEmpty", function() {
-  it("should return the list if not empty", function() {
-    expect(Query.from([1,2,3]).defaultIfEmpty().elementAt(2)).toBe(3);
+describe("When averaging query", function () {
+  it("should return average of all items", function () {
+    expect(Query.from([1, 2, 3]).avg()).toBe(2);
   });
 
-  it("should return default value if collection is empty", function() {
+  it("should allow passing in transform function", function () {
+    expect(Query.from([{ value: 1 }, { value: 2 }, { value: 3 }]).avg(function (item) { return item.value; })).toBe(2);
+  });
+});
+
+describe("When getting max of query", function () {
+  it("should return max item in query", function () {
+    expect(Query.from([1, 5, 4]).max()).toBe(5);
+  });
+
+  it("should allow passing in transform function", function () {
+    expect(Query.from([{ value: 1 }, { value: 2 }, { value: 3 }]).max(function (item) { return item.value; })).toBe(3);
+  });
+});
+
+describe("When getting min of query", function () {
+  it("should return min item in query", function () {
+    expect(Query.from([1, 5, 4]).min()).toBe(1);
+  });
+
+  it("should allow passing in transform function", function () {
+    expect(Query.from([{ value: 1 }, { value: 2 }, { value: 3 }]).min(function (item) { return item.value; })).toBe(1);
+  });
+});
+
+describe("When calling contains", function () {
+  it("should return true if the item exists in the query", function () {
+    expect(Query.from([1, 2, 3]).contains(2)).toBeTruthy();
+  });
+
+  it("should return false if the item does not exist in the query", function () {
+    expect(Query.from([1, 2, 3]).contains(5)).toBeFalsy();
+  });
+
+  it("should allow a comparer function", function () {
+    expect(Query.from([{ id: 1, name: "Joseph Blow" }, { id: 2, name: "Jane Doe" }]).contains({ id: 1 }, function (a, b) { return a.id === b.id; })).toBeTruthy();
+  });
+});
+
+describe("When using defaultIfEmpty", function () {
+  it("should return the list if not empty", function () {
+    expect(Query.from([1, 2, 3]).defaultIfEmpty().elementAt(2)).toBe(3);
+  });
+
+  it("should return default value if collection is empty", function () {
     expect(new Query().defaultIfEmpty(5).elementAt(0)).toBe(5);
-  });   
+  });
 });
 
-describe("When grouping query", function() {
-  it("should return a query of group items", function() {
+describe("When grouping query", function () {
+  it("should return a query of group items", function () {
     expect(new Query([{ state: "MI", city: "Flint" }]).groupBy(function (item) { return item.state; }).elementAt(0) instanceof Query.Group).toBeTruthy();
   });
 
-  it("should group items by key passed in", function() {
+  it("should group items by key passed in", function () {
     var q = Query.from([{ state: "MI", city: "Flint" }, { state: "MI", city: "Ann Arbor" }, { state: "GA", city: "Atlanta" }]);
-    expect(q.groupBy(function(item) { return item.state; }).elementAt(0).key).toBe("GA");
+    expect(q.groupBy(function (item) { return item.state; }).first(function (group) { return group.key === "GA"; }).key).toBe("GA");
   });
 
-  it("should assign the items to the group", function() {
+  it("should assign the items to the group", function () {
     var q = Query.from([{ state: "MI", city: "Flint" }, { state: "MI", city: "Ann Arbor" }, { state: "GA", city: "Atlanta" }]);
-    expect(q.groupBy(function(item) { return item.state; }).elementAt(0).items.length).toBe(1);
+    expect(q.groupBy(function (item) { return item.state; }).first(function (group) { return group.key === "GA"; }).items.length).toBe(1);
   });
 
-  it("should group items correctly when out of order", function() {
+  it("should group items correctly when out of order", function () {
     var q = Query.from([{ state: "MI", city: "Flint" }, { state: "GA", city: "Atlanta" }, { state: "MI", city: "Ann Arbor" }]);
-    expect(q.groupBy(function(item) { return item.state; }).count()).toBe(2);
+    expect(q.groupBy(function (item) { return item.state; }).count()).toBe(2);
   });
 });
 
 describe("When ordering query", function () {
-  it("should return a Query object", function() {
-    expect(Query.from([3,1,2]).orderBy(function(item) { return item; }) instanceof Query).toBeTruthy();
+  it("should return a Query object", function () {
+    expect(Query.from([3, 1, 2]).orderBy(function (item) { return item; }) instanceof Query).toBeTruthy();
   });
 
-  it("should return items in order", function() {
-    expect(Query.from([3,1,2]).orderBy(function(item) { return item; }).elementAt(0)).toBe(1);
+  it("should return items in order", function () {
+    expect(Query.from([3, 1, 2]).orderBy(function (item) { return item; }).elementAt(0)).toBe(1);
   });
 
-  it("should return items in order", function() {
-    expect(Query.from([3,1,2]).orderBy(function(item) { return item; }, true).elementAt(0)).toBe(3);
-  });
-});
-
-describe("When zipping a query", function() {
-  it("should return a Query object", function() {
-    expect(Query.from([1,2,3]).zip(Query.from(["one","two","three"]), function (a,b) { return a + " " + b; }) instanceof Query).toBeTruthy();
-  });
-
-  it("should combine objects", function() {
-    expect(Query.from([1,2,3]).zip(Query.from(["one","two","three"]), function (a,b) { return a + " " + b; }).elementAt(0)).toBe("1 one");
-  });
-
-  it("should allow array to be passed in", function() {
-    expect(Query.from([1,2,3]).zip(["one","two","three"], function (a,b) { return a + " " + b; }).elementAt(0)).toBe("1 one");
-  });
-
-  it("should stop when source query is empty", function() {
-    expect(Query.from([1,2]).zip(["one","two","three"], function (a,b) { return a + " " + b; }).count()).toBe(2);
-  }); 
-
-  it("should stop when combined query is empty", function() {
-    expect(Query.from([1,2,3]).zip(["one","two"], function (a,b) { return a + " " + b; }).count()).toBe(2);
+  it("should return items in order", function () {
+    expect(Query.from([3, 1, 2]).orderBy(function (item) { return item; }, true).elementAt(0)).toBe(3);
   });
 });
 
-describe("When joining queries", function() {
+describe("When zipping a query", function () {
+  it("should return a Query object", function () {
+    expect(Query.from([1, 2, 3]).zip(Query.from(["one", "two", "three"]), function (a, b) { return a + " " + b; }) instanceof Query).toBeTruthy();
+  });
+
+  it("should combine objects", function () {
+    expect(Query.from([1, 2, 3]).zip(Query.from(["one", "two", "three"]), function (a, b) { return a + " " + b; }).elementAt(0)).toBe("1 one");
+  });
+
+  it("should allow array to be passed in", function () {
+    expect(Query.from([1, 2, 3]).zip(["one", "two", "three"], function (a, b) { return a + " " + b; }).elementAt(0)).toBe("1 one");
+  });
+
+  it("should stop when source query is empty", function () {
+    expect(Query.from([1, 2]).zip(["one", "two", "three"], function (a, b) { return a + " " + b; }).count()).toBe(2);
+  });
+
+  it("should stop when combined query is empty", function () {
+    expect(Query.from([1, 2, 3]).zip(["one", "two"], function (a, b) { return a + " " + b; }).count()).toBe(2);
+  });
+});
+
+describe("When joining queries", function () {
   var o1 = { name: "Joe Blow", id: 1 },
     o2 = { name: "Jane Doe", id: 2 },
     pets = Query.from([{ name: "Otto", ownerID: 1 }, { name: "Bailee", ownerID: 2 }, { name: "Maya", ownerID: 2 }]),
-    joined = pets.join(Query.from([o1,o2]), function (a, b) { return a.ownerID === b.id; }, function (a, b) { return { petName: a.name, ownerName: b.name }; });
+    joined = pets.join(Query.from([o1, o2]), function (a, b) { return a.ownerID === b.id; }, function (a, b) { return { petName: a.name, ownerName: b.name }; });
 
-  it("should return a Query object", function() {
+  it("should return a Query object", function () {
     expect(joined instanceof Query).toBeTruthy();
   });
 
-  it("should join on joiner function", function() {
+  it("should join on joiner function", function () {
     expect(joined.count()).toBe(3);
   });
 
-  it("should return items based on selector", function() {
+  it("should return items based on selector", function () {
     expect(joined.elementAt(0).petName).toBe("Otto");
   });
 
-  it("should allow array to be passed in", function() {
-    expect(pets.join([o1,o2], function (a, b) { return a.ownerID === b.id; }, function (a, b) { return { petName: a.name, ownerName: b.name }; }).count()).toBe(3);
+  it("should allow array to be passed in", function () {
+    expect(pets.join([o1, o2], function (a, b) { return a.ownerID === b.id; }, function (a, b) { return { petName: a.name, ownerName: b.name }; }).count()).toBe(3);
   });
 });
 
-describe("When checking sequenceEquals", function() {
-  it("should be false if lengths are different", function() {
-    expect(Query.from([1,2,3]).sequenceEquals(Query.from([1,2]))).toBeFalsy();
+describe("When checking sequenceEquals", function () {
+  it("should be false if lengths are different", function () {
+    expect(Query.from([1, 2, 3]).sequenceEquals(Query.from([1, 2]))).toBeFalsy();
   });
 
-  it("should be true if items match", function() {
-    expect(Query.from([1,2,3]).sequenceEquals(Query.from([1,2,3]))).toBeTruthy();
+  it("should be true if items match", function () {
+    expect(Query.from([1, 2, 3]).sequenceEquals(Query.from([1, 2, 3]))).toBeTruthy();
   });
 
-  it("should be false if items match but are in different order", function() {
-    expect(Query.from([1,2,3]).sequenceEquals(Query.from([1,3,2]))).toBeFalsy();
+  it("should be false if items match but are in different order", function () {
+    expect(Query.from([1, 2, 3]).sequenceEquals(Query.from([1, 3, 2]))).toBeFalsy();
   });
 
-  it("should allor an array to be passed in", function() {
-    expect(Query.from([1,2,3]).sequenceEquals([1,2,3])).toBeTruthy();
+  it("should allor an array to be passed in", function () {
+    expect(Query.from([1, 2, 3]).sequenceEquals([1, 2, 3])).toBeTruthy();
   });
 
-  it("should allow equality comparer to be used", function() {
-    expect(Query.from([{ id: 1, name: "Joe Blow" }, { id: 2, name: "Jane Doe" }]).sequenceEquals([{ id: 1 }, { id: 2 }], function (a,b) { return a.id === b.id; })).toBeTruthy();
+  it("should allow equality comparer to be used", function () {
+    expect(Query.from([{ id: 1, name: "Joe Blow" }, { id: 2, name: "Jane Doe" }]).sequenceEquals([{ id: 1 }, { id: 2 }], function (a, b) { return a.id === b.id; })).toBeTruthy();
   });
 });
 
-describe("When removing an item", function() {
-  it("should return the query instance", function() {
-    var q = Query.from([1,2,3]); 
+describe("When removing an item", function () {
+  it("should return the query instance", function () {
+    var q = Query.from([1, 2, 3]);
     expect(q.remove(3) === q).toBeTruthy();
   });
 
-  it("should decrease the count", function() {
-    expect(Query.from([1,2,3]).remove(3).count()).toBe(2);
+  it("should decrease the count", function () {
+    expect(Query.from([1, 2, 3]).remove(3).count()).toBe(2);
   });
 
-  it("should remove the item", function() {
-    expect(Query.from([1,2,3]).remove(2).elementAt(1)).toBe(3);
+  it("should remove the item", function () {
+    expect(Query.from([1, 2, 3]).remove(2).elementAt(1)).toBe(3);
   });
 });
 
-describe("When clearing a query", function() {
-  it("should return the query instance", function() {
-    var q = Query.from([1,2,3]);
+describe("When clearing a query", function () {
+  it("should return the query instance", function () {
+    var q = Query.from([1, 2, 3]);
     expect(q.clear() === q).toBeTruthy();
   });
 
-  it("should have 0 for count", function() {
-    expect(Query.from([1,2,3]).clear().count()).toBe(0);
+  it("should have 0 for count", function () {
+    expect(Query.from([1, 2, 3]).clear().count()).toBe(0);
   });
 });
