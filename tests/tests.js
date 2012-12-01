@@ -270,28 +270,6 @@ describe("When selecting distinct records", function () {
   });
 });
 
-describe("When adding an item to a Query", function () {
-  it("should return the query instance", function () {
-    var q = new Query();
-    expect(q.add(1) === q).toBeTruthy();
-  });
-
-  it("should increment the count", function () {
-    var q = Query.from([1, 2, 3]), count = q.count();
-    expect(q.add(4).count()).toBe(++count);
-  });
-
-  it("should add item to items array", function () {
-    var q = Query.from([1, 2, 3]);
-    expect(q.add(4).elementAt(3)).toBe(4);
-  });
-
-  it("should examine properties for equality", function () {
-    var q = Query.from([{ FirstName: "Joe", LastName: "Blow" }, { FirstName: "Jane", LastName: "Doe" }, { FirstName: "Joe", LastName: "Blow" }]);
-    expect(q.distinct().count()).toBe(2);
-  });
-});
-
 describe("When calling forEach", function () {
   it("should call a method for each element", function () {
     var counter = 0;
@@ -361,23 +339,23 @@ describe("When intersecting queries", function () {
 
 describe("When diffing queries", function () {
   it("should return a Query object", function () {
-    expect(Query.from([1, 2, 3]).diff(Query.from([2, 3, 4])) instanceof Query).toBeTruthy();
+    expect(Query.from([1, 2, 3]).except(Query.from([2, 3, 4])) instanceof Query).toBeTruthy();
   });
 
-  it("should return results that are not in both queries", function () {
-    expect(Query.from([1, 2, 3]).diff(Query.from([2, 3, 4])).elementAt(1)).toBe(4);
+  it("should return results that are not in first query", function () {
+    expect(Query.from([1, 2, 3]).except(Query.from([2, 3, 4])).elementAt(0)).toBe(1);
   });
 
   it("should return distinct results that are not in both queries", function () {
-    expect(Query.from([1, 2, 3]).diff(Query.from([2, 3, 4, 4])).count()).toBe(2);
+    expect(Query.from([1, 1, 2, 3]).except(Query.from([2, 3, 4, 4])).count()).toBe(1);
   });
 
   it("should allow comparer function", function () {
-    expect(Query.from([{ id: 1, name: "Joe Blow" }]).diff(Query.from([{ id: 1, name: "Joseph Blow" }, { id: 2, name: "Jane Doe" }]), function (a, b) { return a.id === b.id; }).count()).toBe(1);
+    expect(Query.from([{ id: 1, name: "Joe Blow" }, { id: 2, name: "Jane Doe" }]).except(Query.from([{ id: 1, name: "Joseph Blow" }]), function (a, b) { return a.id === b.id; }).count()).toBe(1);
   });
 
   it("should allow arrays to be passed in", function () {
-    expect(Query.from([1, 2, 3]).diff([2, 3, 4]).count()).toBe(2);
+    expect(Query.from([1, 2, 3]).except([2, 3, 4]).count()).toBe(1);
   });
 });
 
@@ -536,20 +514,58 @@ describe("When grouping query", function () {
     var q = Query.from([{ state: "MI", city: "Flint" }, { state: "GA", city: "Atlanta" }, { state: "MI", city: "Ann Arbor" }]);
     expect(q.groupBy(function (item) { return item.state; }).count()).toBe(2);
   });
+
+  it("should allow projector function to be passed in", function () {
+    var q = Query.from([{ state: "MI", city: "Flint" }, { state: "GA", city: "Atlanta" }, { state: "MI", city: "Ann Arbor" }]);
+    expect(
+      q.groupBy(
+        function (item) { return item.state; }, 
+        function (o) { return o.city + ", " + o.state; 
+      }).first(
+        function (o) { return o.key === "GA"; }
+      ).items[0]).toBe("Atlanta, GA");
+  });
 });
 
 describe("When ordering query", function () {
+  var states = [{ state: "MI", city: "Flint" }, { state: "MI", city: "Ann Arbor" }, { state: "GA", city: "Atlanta" }];
+
   it("should return a Query object", function () {
-    expect(Query.from([3, 1, 2]).orderBy(function (item) { return item; }) instanceof Query).toBeTruthy();
+    expect(Query.from([3, 1, 2]).orderBy(function (x, y) { return x > y ? 1 : x < y ? -1 : 0; }) instanceof Query).toBeTruthy();
   });
 
-  it("should return items in order", function () {
-    expect(Query.from([3, 1, 2]).orderBy(function (item) { return item; }).elementAt(0)).toBe(1);
+  it("should return items in expected order", function () {
+    expect(Query.from([3, 1, 2]).orderBy(function (x, y) { return x > y ? 1 : x < y ? -1 : 0; }).elementAt(0)).toBe(1);
   });
 
-  it("should return items in order", function () {
-    expect(Query.from([3, 1, 2]).orderBy(function (item) { return item; }, true).elementAt(0)).toBe(3);
+  it("should order complex objects", function () {
+    expect(Query.from(states).orderBy(function (x,y) { return x.state.localeCompare(y.state); }).elementAt(0).state).toBe("GA");
   });
+});
+
+describe("When ordering with string overload", function () {
+  var states = [{ state: "MI", city: "Flint" }, { state: "MI", city: "Ann Arbor" }, { state: "GA", city: "Atlanta" }];
+
+  it("should allow ordering by property names", function () {
+    expect(Query.from(states).orderBy("state ASC,city ASC").elementAt(1).city).toBe("Ann Arbor");
+  });
+
+  it("should descend sorting when using 'DESC'", function () {
+    expect(Query.from(states).orderBy("state DESC, city DESC").elementAt(2).state).toBe("GA");
+  });
+
+  it("should default to ascending when not passed in", function () {
+    expect(Query.from(states).orderBy("state,city").elementAt(1).city).toBe("Ann Arbor");
+  });
+
+  it("should tolerate spaces", function () {
+    expect(Query.from(states).orderBy("state ASC, city ASC").elementAt(1).city).toBe("Ann Arbor");
+  });
+
+  it("should tolerate lower case sorting directions", function () {
+    expect(Query.from(states).orderBy("state desc, city asc").elementAt(2).state).toBe("GA");
+  });
+
 });
 
 describe("When zipping a query", function () {
@@ -572,11 +588,16 @@ describe("When zipping a query", function () {
   it("should stop when combined query is empty", function () {
     expect(Query.from([1, 2, 3]).zip(["one", "two"], function (a, b) { return a + " " + b; }).count()).toBe(2);
   });
+
+  it("should use default projector when no projector is defined", function () {
+    expect(Query.from([{ value: 1 }, { value: 2 }]).zip([{ name: "one" }, { name: "two" }]).contains({ value: 1, name: "one" })).toBeTruthy();
+  });
 });
 
 describe("When joining queries", function () {
   var o1 = { name: "Joe Blow", id: 1 },
     o2 = { name: "Jane Doe", id: 2 },
+    o3 = { name: "No Pet Loser", id: 3 },
     pets = Query.from([{ name: "Otto", ownerID: 1 }, { name: "Bailee", ownerID: 2 }, { name: "Maya", ownerID: 2 }]),
     joined = pets.join(Query.from([o1, o2]), function (a, b) { return a.ownerID === b.id; }, function (a, b) { return { petName: a.name, ownerName: b.name }; });
 
@@ -594,6 +615,71 @@ describe("When joining queries", function () {
 
   it("should allow array to be passed in", function () {
     expect(pets.join([o1, o2], function (a, b) { return a.ownerID === b.id; }, function (a, b) { return { petName: a.name, ownerName: b.name }; }).count()).toBe(3);
+  });
+
+  it("should not modify original object when using default projector", function() {
+    expect(pets.join([o1, o2], function (a, b) { return a.ownerID === b.id; }).elementAt(0) === pets.elementAt(0)).toBeFalsy();
+  });
+
+  it("should select all data if no projector is defined", function() {
+    var expected = { name: "Otto", ownerID: 1, id: 1 };
+    expect(pets.join([o1, o2], function (a, b) { return a.ownerID === b.id; }).contains(expected)).toBeTruthy();
+  });
+
+  it("should omit items that do not have matching join", function () {
+    var j = Query.from([o1, o2, o3]).join(pets, function (a, b) { return a.id === b.ownerID }, function (a, b) { return { ownerName: a.name, id: a.id, petName: b.name }; });
+    expect(j.any(function (a) { return a.id === 3; })).toBeFalsy();
+  });
+});
+
+describe("When outer joining queries", function () {
+  var o1 = { name: "Joe Blow", id: 1 },
+    o2 = { name: "Jane Doe", id: 2 },
+    o3 = { name: "No Pets", id: 3 },
+    pets = Query.from([{ name: "Otto", ownerID: 1 }, { name: "Bailee", ownerID: 2 }, { name: "Maya", ownerID: 2 }]);
+
+  it("should return a query object", function () {
+    var j = Query.from([o1, o2, o3]).outerJoin(pets, function (a, b) { return a.id === b.ownerID }, function (a, b) { return { ownerName: a.name, id: a.id, petName: b && b.name }; });
+    expect(j instanceof Query).toBeTruthy();
+  });
+
+  it("should join on joiner function", function () {
+    var j = Query.from([o1, o2]).outerJoin(pets, function (a, b) { return a.id === b.ownerID }, function (a, b) { return { ownerName: a.name, id: a.id, petName: b && b.name }; });
+    expect(j.count()).toBe(3);
+  });
+
+  it("should keep items that do not have matching join", function () {
+    var j = Query.from([o1, o2, o3]).outerJoin(pets, function (a, b) { return a.id === b.ownerID }, function (a, b) { return { ownerName: a.name, id: a.id, petName: b && b.name }; });
+    expect(j.any(function (a) { return a.id === 3; })).toBeTruthy();
+  });
+
+  it("should use default projector when no projector is defined", function () {
+    var expected = { name: "Joe Blow", ownerID: 1, id: 1 };
+    expect(Query.from([o1, o2, o3]).outerJoin(pets, function (a, b) { return a.id === b.ownerID; }).contains(expected)).toBeTruthy();
+  });
+
+  it("should only include properties from the first object when join isn't made", function () {
+    var expected = { name: "No Pets", id: 3 };
+    expect(Query.from([o1, o2, o3]).outerJoin(pets, function (a, b) { return a.id === b.ownerID; }).contains(expected)).toBeTruthy();
+  });
+});
+
+describe("When cross joining items", function() {
+  var days = [{ day: "sun"},{ day: "mon"},{ day: "tue"},{ day: "wed"},{ day: "thu"},{ day: "fri"},{ day: "sat"}];
+  var weeks = [{ name: "week1" },{ name: "week2" },{ name: "week3" },{ name: "week4" }];
+  var projector = function (a, b) { return { week: a.name, day: b.day  }; };
+
+  it("should return a query object", function() {
+    expect(Query.from(weeks).crossJoin(days, projector) instanceof Query).toBeTruthy();
+  });
+
+  it("should join all items", function() {
+    expect(Query.from(weeks).crossJoin(days, projector).count()).toBe(28);
+  });
+
+  it("should use default selector when none is applied", function() {
+    var expected = { name: "week1", day: "sun" };
+    expect(Query.from(weeks).crossJoin(days).contains(expected)).toBeTruthy();
   });
 });
 
@@ -619,28 +705,156 @@ describe("When checking sequenceEquals", function () {
   });
 });
 
-describe("When removing an item", function () {
-  it("should return the query instance", function () {
-    var q = Query.from([1, 2, 3]);
-    expect(q.remove(3) === q).toBeTruthy();
+describe("When outer applying from a query", function() {
+  var q = Query.from([
+    { name: "Josh", pets: [{ name: "Otto"  }] },
+    { name: "Jon", pets: [{ name: "Maya" }, { name: "Bailee" }]}
+  ]),
+    p = function(a, b) { return { name: a.name, pet: b ? b.name : "" }; };
+
+  it("should return a query instance", function() {
+    expect(q.outerApply(function (a) { return a.pets; }, p) instanceof Query).toBeTruthy();
   });
 
-  it("should decrease the count", function () {
-    expect(Query.from([1, 2, 3]).remove(3).count()).toBe(2);
+  it("should contain the items returned from the query", function() {
+    expect(q.outerApply(function (a) { return a.pets; }, p).contains({ name: "Jon", pet: "Maya" })).toBeTruthy();
   });
 
-  it("should remove the item", function () {
-    expect(Query.from([1, 2, 3]).remove(2).elementAt(1)).toBe(3);
+  it("should allow returning a query object from the selector", function() {
+    expect(q.outerApply(function (a) { return Query.from(a.pets); }, p).count()).toBe(3);
+  });
+
+  it("should allow returning of an object", function() {
+    expect(q.outerApply(function (a) { return { name: a.name }; }, p).count()).toBe(2);
+  });
+
+  it("should also keep items that get undefined result", function() {
+    var a = q.items.concat([{ name: "No Pets" }]);
+    expect(Query.from(a).outerApply(function (b) { if (b.pets) { return b.pets; } }, p).contains({ name: "No Pets", pet: "" })).toBeTruthy();
+  });
+
+  it("should use default projector if none is passed in", function() {
+    var a = q.items.concat([{ name: "No Pets" }]);
+    expect(Query.from(a).outerApply(function (b) { if (b.pets) { return b.pets; } }).contains({ name: "No Pets" })).toBeTruthy();
   });
 });
 
-describe("When clearing a query", function () {
-  it("should return the query instance", function () {
-    var q = Query.from([1, 2, 3]);
-    expect(q.clear() === q).toBeTruthy();
+describe("When cross applying from a query", function() {
+  var q = Query.from([
+    { name: "Josh", pets: [{ name: "Otto"  }] },
+    { name: "Jon", pets: [{ name: "Maya" }, { name: "Bailee" }]}
+  ]),
+    p = function(a, b) { return { name: a.name, pet: b ? b.name : "" }; };
+
+  it("should return a query instance", function() {
+    expect(q.crossApply(function (a) { return a.pets; }, p) instanceof Query).toBeTruthy();
   });
 
-  it("should have 0 for count", function () {
-    expect(Query.from([1, 2, 3]).clear().count()).toBe(0);
+  it("should contain the items returned from the query", function() {
+    expect(q.crossApply(function (a) { return a.pets; }, p).contains({ name: "Jon", pet: "Maya" })).toBeTruthy();
+  });
+
+  it("should allow returning a query object from the selector", function() {
+    expect(q.crossApply(function (a) { return Query.from(a.pets); }, p).count()).toBe(3);
+  });
+
+  it("should allow returning of an object", function() {
+    expect(q.crossApply(function (a) { return { name: a.name }; }, p).count()).toBe(2);
+  });
+
+  it("should not keep items that get undefined result", function() {
+    var a = q.items.concat([{ name: "No Pets" }]);
+    expect(Query.from(a).crossApply(function (b) { if (b.pets) { return b.pets; } }, p).contains({ name: "No Pets", pet: "" })).toBeFalsy();
+  });
+
+  it("should use default projector if none is passed in", function() {
+    expect(q.crossApply(function (b) { if (b.pets) { return b.pets; } }).count(function(o) { return o.name === "Jon"; })).toBe(2);
+  });
+});
+
+describe("When converting to dictionary", function() {
+  var a = Query.from([
+    { company: "Coho Vineyard", weight: 25.2, trackingNumber: "89453312L" },
+    { company: "Lucerne Publishing", weight: 18.7, trackingNumber: "89112755L" },
+    { company: "Wingtip Toys", weight: 6.0, trackingNumber: "299456122L" },
+    { company: "Adventure Works", weight: 33.8, trackingNumber: "4665518773L" } 
+  ]);
+
+  it("should return an object", function() {
+    expect(a.toDictionary(function (o) { return o.trackingNumber; }) instanceof Object).toBeTruthy();
+  });
+
+  it("should have properties that contain the key value", function() {
+    expect(a.toDictionary(function (o) { return o.trackingNumber; })["4665518773L"].company).toBe("Adventure Works");
+  });
+
+  it("should use projector functions if provided", function() {
+    expect(a.toDictionary(function (o) { return o.trackingNumber; }, function (o) { return { name: o.company }; })["4665518773L"].name).toBe("Adventure Works");
+  });
+
+  it("should throw an exception if duplicate keys", function() {
+    expect(function() { 
+      var d = Query.from([{ id: "1", name: "One" }, { id: "1", name: "One" }]).toDictionary(function (k) { return k.name; });
+    }).toThrow();
+  });
+
+  it("should accept a string for the key name", function() {
+    expect(a.toDictionary("trackingNumber")["4665518773L"].company).toBe("Adventure Works");
+  });
+});
+
+describe("When converting to dictionary", function() {
+  var a = Query.from([
+    { company: "Coho Vineyard", weight: 25.2, trackingNumber: "89453312L" },
+    { company: "Lucerne Publishing", weight: 18.7, trackingNumber: "89112755L" },
+    { company: "Wingtip Toys", weight: 6.0, trackingNumber: "299456122L" },
+    { company: "Adventure Works", weight: 33.8, trackingNumber: "4665518773L" } 
+  ]);
+
+  it("should return an object", function() {
+    expect(a.toDictionary(function (o) { return o.trackingNumber; }) instanceof Object).toBeTruthy();
+  });
+
+  it("should have properties that contain the key value", function() {
+    expect(a.toDictionary(function (o) { return o.trackingNumber; })["4665518773L"].company).toBe("Adventure Works");
+  });
+
+  it("should use projector functions if provided", function() {
+    expect(a.toDictionary(function (o) { return o.trackingNumber; }, function (o) { return { name: o.company }; })["4665518773L"].name).toBe("Adventure Works");
+  });
+
+  it("should throw an exception if duplicate keys", function() {
+    expect(function() { 
+      var d = Query.from([{ id: "1", name: "One" }, { id: "1", name: "One" }]).toDictionary(function (k) { return k.name; });
+    }).toThrow();
+  });
+
+  it("should accept a string for the key name", function() {
+    expect(a.toDictionary("trackingNumber")["4665518773L"].company).toBe("Adventure Works");
+  });
+});
+
+describe("When converting to lookup", function() {
+  var a = Query.from([
+    { company: "Coho Vineyard", weight: 25.2, trackingNumber: "89453312L" },
+    { company: "Lucerne Publishing", weight: 18.7, trackingNumber: "89112755L" },
+    { company: "Wingtip Toys", weight: 6.0, trackingNumber: "299456122L" },
+    { company: "Adventure Works", weight: 33.8, trackingNumber: "4665518773L" } 
+  ]);
+
+  it("should return an object", function() {
+    expect(a.toLookup(function (o) { return o.company.charAt(0); }) instanceof Object).toBeTruthy();
+  });
+
+  it("should have properties that contain the key value", function() {
+    expect("C" in a.toLookup(function (o) { return o.company.charAt(0); })).toBeTruthy();
+  });
+
+  it("should use projector functions if provided", function() {
+    expect(a.toLookup(function (o) { return o.company.charAt(0); }, function (o) { return { name: o.company }; })["A"][0].name).toBe("Adventure Works");
+  });
+
+  it("should accept a string for the key name", function() {
+    expect(a.toLookup("trackingNumber")["4665518773L"][0].company).toBe("Adventure Works");
   });
 });

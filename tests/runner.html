@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <title></title>
+  <link href="../lib/jasmine.css" rel="stylesheet" type="text/css" />
+  <script src="../lib/jasmine.js" type="text/javascript"></script>
+  <script src="../lib/jasmine-html.js" type="text/javascript"></script>
+
+  <script src="../legacy.js" type="text/javascript"></script>
+  <script src="../query.js" type="text/javascript"></script>
+  <script src="tests.js" type="text/javascript"></script>
+</head>
+<body>
+  <script type="text/javascript">
+    jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
+    jasmine.getEnv().execute();
+  </script>
+</body>
+</html>
