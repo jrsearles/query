@@ -56,7 +56,7 @@ var q = Query.from([1,2,3]).sum(function(item, index) { return item * 2; });
 // results: 12
 ```
 
-#### Element Operators:
+#### Element Operators: ####
 - `elementAt` Returns the element at the specified index.
   - index: Number of the index of the element.
   - defaultItem: *optional* Object to be returned if no match is found.
@@ -129,10 +129,30 @@ var a = Query.from([1,2,3]).contains(1);
 var names = Query
   .from([{ firstName: "Joe", lastName: "Blow" }, { firstName: "Jane", lastName: "Doe" }])
   .select(function (person) { return { name: person.firstName + " " + person.lastName; }; });
+
 // results: { name: "Joe Blow" }, { name: "Jane Doe" }
 ```
 
-- `selectMany` **TODO**
+- `selectMany` Flattens a one-to-many relationship based on an applier function.
+  - applierFn: Function to return array to flatted.
+  - projectorFn: *optional* Function to transform the items.
+
+```javascript
+var people = [
+  { name: "Joe Blow", pets: [{ name: "Otto" }] },
+  { name: "John Smith", pets: [{ name: "Maya" }, { name: "Bailee" }] }
+];
+
+var applier = function(person) { return person.pets; };
+var projector = function(person, pet) { return { name: person.name, petName: pet.name }; };
+
+var owners = Query.from(people).selectMany(applier, projector);
+
+// results:
+// { name: "Joe Blow", petName: "Otto" },
+// { name: "John Smith", petName: "Maya" },
+// { name: "John Smith", petName: "Bailee" }
+```
 
 #### Set Operators
 
@@ -197,7 +217,27 @@ var combined = Query.from(time).crossJoin(ampm, projector);
 // results: ["1am","1pm","2am","2pm","3am","3pm","4am","4pm","5am","5pm","6am","6pm","7am","7pm","8am","8pm","9am","9pm","10am","10pm","11am","11pm","12am","12pm"]
 ```
 
-- `fullJoin` **TODO**
+- `fullJoin` Joins two queries based on matching keys. Records that do not match are included from both queries.
+  - items: Array or query to join.
+  - joinerFn: Function to indicate which items matched.
+  - projectorFn: *optional* Function to transform the items.
+
+```javascript
+var employees = [{ name: "Joe Blow", departmentID: 1 }, { name: "John Smith", departmentID: null ];
+var departments = [{ name: "Marketing", id: 1 }, { name: "Sales", id: 2 }];
+
+var joiner = function (employee, dept) { return employee.departmentID === dept.id; };
+
+// either element can be null
+var projector = function (employee, dept) { return { name: employee && employee.name, department: dept && dept.name }; };
+
+var q = Query.from(employees).fullJoin(departments, joiner, projector);
+
+// results:
+// { name: "Joe Blow", department: "Marketing },
+// { name: "John Smith", department: undefined },
+// { name: undefined, department: "Sales" }
+```
 
 - `join` Joins two queries based on matching keys. Records that do not match are excluded.
   - items: Array or query to append.
@@ -217,7 +257,10 @@ var joined = pets.join(Query.from([
 ]), function (a, b) { return a.ownerID === b.id; }, 
   function (a, b) { return { petName: a.name, ownerName: b.name }; });
   
-// results: { petName: "Otto", ownerName: "Joe Blow" }, { petName: "Bailee", owerName: "Jane Doe" }, { petName: "Maya", owerName: "Jane Doe" }
+// results: 
+// { petName: "Otto", ownerName: "Joe Blow" }, 
+// { petName: "Bailee", owerName: "Jane Doe" }, 
+// { petName: "Maya", owerName: "Jane Doe" }
 ```
 
 - `outerApply` Projects each element in a query into a new form. The expected results are an array, with each element to be inserted into the returned query. All items from the existing query will be returned.
