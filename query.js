@@ -1,8 +1,9 @@
-﻿(function(global) {
+(function(global) {
   "use strict";
 
   var 
     Q, G, 
+    // store prototypes
     arrProto = Array.prototype,
     objProto = Object.prototype,
     // native methods
@@ -10,8 +11,9 @@
     push = arrProto.push,
     toString = objProto.toString,
     hasOwnProperty = objProto.hasOwnProperty,
-    min = Math.min,
-    max = Math.max;
+    m = Math,
+    min = m.min,
+    max = m.max;
 
   // various helper functions
   function isFunction(fn) {
@@ -28,6 +30,10 @@
 
   function isArray(o) {
     return toString.call(o) === "[object Array]";
+  }
+
+  function isNull(o) {
+    return o === null;
   }
 
   function getProperties(obj) {
@@ -144,26 +150,45 @@
     }
   }
 
-  function joiner(leftItems, rightItems, joinerFn, projectorFn, isOuterJoin) {
+  function joiner(leftItems, rightItems, joinerFn, projectorFn, isOuterJoin, isFullJoin) {
     var results = [],
+      rightJoined = [],
       joined;
 
     leftItems.forEach(function(a) {
       // reset
       joined = false;
 
-      rightItems.forEach(function(b) {
+      rightItems.forEach(function(b, i) {
         if(joinerFn(a, b)) {
           joined = true;
           results.push(projectorFn(a, b));
+
+          // we only care about the right items if we're doing a full join
+          if (isFullJoin) {
+            rightJoined[i] = true;
+          }
         }
       });
 
       if(isOuterJoin && !joined) {
         // no match but since we are doing an outer join include left results
-        results.push(projectorFn(a));
+        results.push(projectorFn(a, null));
       }
     });
+
+    if (isFullJoin) {
+      var i = 0, ln = rightItems.length;
+
+      // include unmatched items from the right results
+      while (i < ln) {
+        if (!rightJoined[i]) {
+          results.push(projectorFn(null, rightItems[i]));
+        }
+
+        i++;
+      }
+    }
 
     return results;
   }
@@ -207,7 +232,7 @@
     // copy a to new object
     var o = mergeObjects({}, a);
 
-    if(isDefined(b)) {
+    if(isDefined(b) && !isNull(b)) {
       mergeObjects(o, b);
     }
 
@@ -217,6 +242,28 @@
   function stringToKeyFn(s) {
     return function(o) {
       return o[s];
+    }
+  }
+
+  function stringToProjectorFn(s) {
+    var fields = s.split(","), fieldData, 
+      mapper = [];
+
+    fields.forEach(function(field) {
+      fieldData = field.split(" ");
+      mapper.push({
+        field: fieldData[0],
+        alias: fieldData[fieldData.length - 1]
+      });
+    });
+
+    return function(o) {
+      var n = {};
+      mapper.forEach(function(map) {
+        n[map.alias] = o[map.field];
+      });
+
+      return n;
     }
   }
 
@@ -239,6 +286,8 @@
     this.items = (items && slice.call(items, 0)) || [];
     return this;
   };
+
+  Q.version = "0.8";
 
   /**
    * Creates a Query instance.
@@ -292,7 +341,7 @@
      * @return {Number} The maximum value.
      */
     max: function(projectorFn) {
-      return max.apply(Math, isFunction(projectorFn) ? this.select(projectorFn).items : this.items);
+      return max.apply(m, isFunction(projectorFn) ? this.select(projectorFn).items : this.items);
     },
 
     /**
@@ -302,7 +351,7 @@
      * @return {Number} The minimum value.
      */
     min: function(projectorFn) {
-      return min.apply(Math, isFunction(projectorFn) ? this.select(projectorFn).items : this.items);
+      return min.apply(m, isFunction(projectorFn) ? this.select(projectorFn).items : this.items);
     },
 
     /**
@@ -540,9 +589,20 @@
      * @return {Query} A new query with the transformed elements.
      */
     select: function(projectorFn) {
-      return new Q(this.items.map(projectorFn));
+      var projector = isString(projectorFn) ? stringToProjectorFn(projectorFn) : projectorFn;
+      return new Q(this.items.map(projector));
     },
 
+    /**
+     * Projects each element into a flattened form using a projection function.
+     * 
+     * @param  {Function} applierFn The function which returns the array of elements to flatten.
+     * @param  {Function} projectorFn The function to transform the elements.
+     * @return {Query} A new query with the transformed elements.
+     */
+    selectMany: function(applierFn, projectorFn) {
+      return new Q(applier(this.items, applierFn, projectorFn || selectStar, false));
+    },
 
     // Set Operators
 
@@ -699,11 +759,23 @@
     },
 
     /**
+     * Joins two queries based on join function. Records that do not match are included from both queries.
+     * 
+     * @param  {Query} items The query to join.
+     * @param  {Function} joinerFn The function to match the two queries.
+     * @param  {Function} projectorFn The function to transform the combined elements. (optional)
+     * @return {Query} The joined query.
+     */
+    fullJoin: function(items, joinerFn, projectorFn) {
+      return new Q(joiner(this.items, items.items || items, joinerFn, projectorFn || selectStar, true, true));
+    },
+
+    /**
      * Joins two queries based on matching keys. Records that do not match are excluded.
      *
      * @param  {Query} items The query to join.
-     * @param  {Function} projectorFn The function to match the two queries.
-     * @param  {Function} selectorFn The function to transform the combined elements.
+     * @param  {Function} joinerFn The function to match the two queries.
+     * @param  {Function} projectorFn The function to transform the combined elements. (optional)
      * @return {Query} The joined query.
      */
     join: function(items, joinerFn, projectorFn) {
