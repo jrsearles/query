@@ -1,4 +1,4 @@
-(function(global) {
+;(function(global) {
   "use strict";
 
   var 
@@ -11,6 +11,8 @@
     push = arrProto.push,
     toString = objProto.toString,
     hasOwnProperty = objProto.hasOwnProperty,
+    sortRgx = /\b(\w+)\b\s*(asc|desc)?\s*(?:,|$)/gi,
+    selectRgx = /\b(\w+)\b(?:\s+(?:as\s+)?(\w+))?\s*(?:,|$)/gi,
     m = Math,
     min = m.min,
     max = m.max;
@@ -28,29 +30,11 @@
     return typeof o === "string";
   }
 
-  function isArray(o) {
-    return toString.call(o) === "[object Array]";
-  }
-
   function isNull(o) {
     return o === null;
   }
 
-  function getProperties(obj) {
-    var props = [],
-      prop;
-
-    for(prop in obj) {
-      if(hasOwnProperty.call(obj, prop)) {
-        props.push(prop);
-      }
-    }
-
-    return props;
-  }
-
   function equals(a, b) {
-    // heavily borrowed from underscore's isEqual method.
     var prop;
 
     // check reference
@@ -73,32 +57,17 @@
       return false;
     }
 
-    var typeName = toString.call(a);
-    if(toString.call(b) !== typeName) {
-      return false;
-    }
-
-    if(typeName === "[object String]" || typeName === "[object Number]" || typeName === "[object Boolean]") {
-      return a == b;
-    }
-
-    if(typeName === "[object Date]") {
-      return a.getTime() === b.getTime();
-    }
-
-    // get properties into array
-    if(getProperties(a).length !== getProperties(b).length) {
-      return false;
-    }
-
-    // iterate over properties
-    for(prop in a) {
-      if(hasOwnProperty.call(a, prop) && (!(prop in b) || !equals(a[prop], b[prop]))) {
-        return false;
+    if (typeof a === "object") {
+      for (prop in a) {
+        if (!equals(a[prop], b[prop])) {
+          return false;
+        }
       }
+
+      return true;
     }
 
-    return true;
+    return false;
   }
 
   function sortDefault(x, y) {
@@ -110,21 +79,23 @@
   }
 
   function parseSorter(fields, sample) {
-    var sortParam, sorts = [],
-      ln;
+    var sorts = [];
 
     // parse string
-    fields.split(",").forEach(function(field) {
-      sortParam = field.trim().split(" ");
+    fields.replace(sortRgx, function (match, field, direction) {
       sorts.push({
-        field: sortParam[0],
-        direction: sortParam[1] && sortParam[1].toLowerCase() === "desc" ? -1 : 1,
-        comparer: isString(sample[sortParam[0]]) ? sortString : sortDefault
+        field: field,
+        direction: !direction ? 1 : /^a/i.test(direction) ? 1 : -1,
+        comparer: isString(sample[field]) ? sortString : sortDefault
       });
     });
 
+    return createSorter(sorts);    
+  }
+
+  function createSorter(fields) {
     // length can be cached
-    ln = sorts.length;
+    var ln = fields.length;
 
     return function(a, b) {
       var i = 0,
@@ -132,7 +103,7 @@
 
       // iterate through sort fields
       while(i < ln) {
-        sort = sorts[i];
+        sort = fields[i];
         x = a[sort.field];
         y = b[sort.field];
         value = sort.comparer(x, y);
@@ -150,7 +121,7 @@
     }
   }
 
-  function joiner(leftItems, rightItems, joinerFn, projectorFn, isOuterJoin, isFullJoin) {
+  function loopJoin(leftItems, rightItems, joinerFn, projectorFn, isOuterJoin, isFullJoin) {
     var results = [],
       rightJoined = [],
       joined;
@@ -187,6 +158,32 @@
         }
 
         i++;
+      }
+    }
+
+    return results;
+  }
+
+  function mergeJoin(leftItems, rightItems, map, projectorFn) {
+    var joiner = mapToJoiner(map), results = [], a, b,
+      i = 0, j = 0, lnLeft = leftItems.length, lnRight = rightItems.length;
+    
+    // prepare for merge
+    mergeSort(leftItems, rightItems, map);
+
+    while (i < lnLeft && j < lnRight) {
+      a = leftItems[i];
+      b = rightItems[j];
+      if (joiner(a, b)) {
+        console.log("found");
+        results.push(projectorFn(a, b));
+        j++;
+      } else if (i < j) {
+        console.log("i: " + i);
+        i++;
+      } else {
+        console.log("j: " + j);
+        j++;
       }
     }
 
@@ -249,11 +246,10 @@
     var fields = s.split(","), fieldData, 
       mapper = [];
 
-    fields.forEach(function(field) {
-      fieldData = field.split(" ");
+    s.replace(selectRgx, function (match, field, alias) {
       mapper.push({
-        field: fieldData[0],
-        alias: fieldData[fieldData.length - 1]
+        field: field,
+        alias: alias || field
       });
     });
 
@@ -265,6 +261,38 @@
 
       return n;
     }
+  }
+
+  function mapToJoiner(o) {
+    var keys = Object.keys(o), ln = keys.length;
+
+    return function(a, b) {
+      var i = 0;
+      while (i < ln) {
+        if (a[keys[i]] !== b[o[keys[i]]]) {
+          return false;
+        }
+
+        i++;
+      }
+
+      return true;
+    }
+  }
+
+  function mergeSort(leftItems, rightItems, map) {
+    var left = [], right = [], field, a = leftItems[0], b = rightItems[0];
+
+    // get right
+    for (field in map) {
+      if (hasOwnProperty.call(map, field)) {
+        left.push({ field: field, direction: 1, comparer: isString(a[field]) ? sortString : sortDefault });
+        right.push({ field: map[field], direction: 1, comparer: isString(b[field]) ? sortString : sortDefault });
+      }
+    }
+
+    leftItems.sort(createSorter(left));
+    rightItems.sort(createSorter(right));
   }
 
   /**
@@ -281,13 +309,22 @@
      * @type {Array} The elements.
      */
 
+    var me = this;
+
     // create a clone of the array if passed in 
     // we don't want to modify the original array
-    this.items = (items && slice.call(items, 0)) || [];
-    return this;
+    me.items = items || [];
+
+    // create indexers
+    me.items.forEach(function(item, i) { me[i] = item; });
+
+    // length is mostly here to make the object "array-like"
+    me.length = me.items.length;
+
+    return me;
   };
 
-  Q.version = "0.8";
+  Q.version = "0.9.0";
 
   /**
    * Creates a Query instance.
@@ -311,6 +348,11 @@
   };
 
   Q.prototype = {
+    /**
+     * The number of objects in the Query.
+     * @type {Number}
+     */
+    length: 0,
 
     // Aggregates
 
@@ -331,7 +373,7 @@
      * @return {Number} The element count.
      */
     count: function(predicateFn) {
-      return predicateFn ? this.where(predicateFn).items.length : this.items.length;
+      return predicateFn ? this.where(predicateFn).length : this.items.length;
     },
 
     /**
@@ -410,7 +452,7 @@
         return defaultItem;
       }
 
-      return this.items[index];
+      return this[index];
     },
 
     /**
@@ -529,7 +571,7 @@
     },
 
 
-    // Quantifiers
+    // Qualifiers
 
     /**
      * Determines whether all elements matches a given predicate.
@@ -570,13 +612,7 @@
       var i = this.items.length,
         comparer = comparerFn || equals;
 
-      while(i--) {
-        if(comparer(this.items[i], item)) {
-          return true;
-        }
-      }
-
-      return false;
+      return this.any(function (a) { return comparer(a, item); });
     },
 
 
@@ -631,7 +667,7 @@
         // look through remaining items and see if there is another match
         // save a little processing by skipping the elements we've already compared
         j = ln;
-        while(--j > i && !comparer(item, me.items[j])) {}
+        while(--j > i && !comparer(item, me.items[j]));
 
         // if these equal we made it all the way through the remaining items
         if(i === j) {
@@ -767,7 +803,7 @@
      * @return {Query} The joined query.
      */
     fullJoin: function(items, joinerFn, projectorFn) {
-      return new Q(joiner(this.items, items.items || items, joinerFn, projectorFn || selectStar, true, true));
+      return new Q(loopJoin(this.items, items.items || items, joinerFn, projectorFn || selectStar, true, true));
     },
 
     /**
@@ -779,7 +815,7 @@
      * @return {Query} The joined query.
      */
     join: function(items, joinerFn, projectorFn) {
-      return new Q(joiner(this.items, items.items || items, joinerFn, projectorFn || selectStar, false));
+      return new Q((isFunction(joinerFn) ? loopJoin : mergeJoin)(this.items, items.items || items, joinerFn, projectorFn || selectStar, false));
     },
     
     /**
@@ -804,7 +840,7 @@
      * @return {Query} The joined query.
      */
     outerJoin: function(items, joinerFn, projectorFn) {
-      return new Q(joiner(this.items, items.items || items, joinerFn, projectorFn || selectStar, true));
+      return new Q(loopJoin(this.items, items.items || items, joinerFn, projectorFn || selectStar, true));
     },
 
 
@@ -939,7 +975,7 @@
      * @return {Query} The query instance or a query with the provided default element.
      */
     defaultIfEmpty: function(defaultItem) {
-      return this.items.length ? this : new Q([defaultItem]);
+      return this.length ? this : new Q([defaultItem]);
     },
 
     /**
@@ -950,7 +986,12 @@
      * @return {Query} The query instance.
      */
     forEach: function(fn, scope) {
-      this.items.forEach(fn, scope);
+      var i = 0, ln = this.length;
+      while (i < ln) {
+        fn.call(scope || this, this[i], i, this);
+        i++;
+      }
+
       return this;
     },
     
