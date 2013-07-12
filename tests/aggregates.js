@@ -8,6 +8,11 @@ describe("Aggregate Functions:", function() {
 	  it("should only include valid items when using a selector function", function () {
 	    expect(Query.from([1, 2, 3]).count(function (v) { return v >= 2; })).toBe(2);
 	  });
+
+	  it("should take accept a predicate object", function() {
+	  	var items = [{ name: "Jim" }, { name: "John" }, { name: "Josh" }];
+	  	expect(Query.from(items).count({ name: "Josh" })).toBe(1);
+	  });
 	});
 
 	describe("When summing query", function () {

@@ -1,27 +1,40 @@
-<!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+<!doctype html>
+<html>
 <head>
-  <title></title>
-  <link href="../lib/jasmine.css" rel="stylesheet" type="text/css" />
-  <script src="../lib/jasmine.js" type="text/javascript"></script>
-  <script src="../lib/jasmine-html.js" type="text/javascript"></script>
+  <meta charset="utf-8">
+  <title>Jasmine Spec Runner</title>
 
-  <script src="../legacy.js" type="text/javascript"></script>
-  <script src="../query.js" type="text/javascript"></script>
-  <script src="core.js" type="text/javascript"></script>
-  <script src="aggregates.js" type="text/javascript"></script>
-  <script src="filtering.js" type="text/javascript"></script>
-  <script src="qualifiers.js" type="text/javascript"></script>
-  <script src="set.js" type="text/javascript"></script>
-  <script src="joins.js" type="text/javascript"></script>
-  <script src="grouping.js" type="text/javascript"></script>
-  <script src="partitioning.js" type="text/javascript"></script>
-  <script src="projections.js" type="text/javascript"></script>
+  <link rel="stylesheet" type="text/css" href="../.grunt/grunt-contrib-jasmine/jasmine.css">
+     
+  <script src="../.grunt/grunt-contrib-jasmine/jasmine.js"></script>
+  <script src="../.grunt/grunt-contrib-jasmine/jasmine-html.js"></script>
+
+  <script src="../src/query.js"></script>
+  <script src="../src/util.js"></script>
+  <script src="../src/filtering.js"></script>
+  <script src="../src/qualifiers.js"></script>
+  <script src="../src/projections.js"></script>
+  <script src="../src/aggregates.js"></script>
+  <script src="../src/grouping.js"></script>
+  <script src="../src/sorting.js"></script>
+  <script src="../src/joins.js"></script>
+  <script src="../src/partitioning.js"></script>
+  <script src="../src/set.js"></script>
+  
+  <script src="aggregates.js"></script>  
+  <script src="core.js"></script>
+  <script src="filtering.js"></script>
+  <script src="grouping.js"></script>
+  <script src="joins.js"></script>
+  <script src="partitioning.js"></script>
+  <script src="projections.js"></script>
+  <script src="qualifiers.js"></script>
+  <script src="set.js"></script>
+  
+  <script src="../.grunt/grunt-contrib-jasmine/reporter.js"></script>
+  <script src="../.grunt/grunt-contrib-jasmine/jasmine-helper.js"></script>
+
 </head>
 <body>
-  <script type="text/javascript">
-    jasmine.getEnv().addReporter(new jasmine.TrivialReporter());
-    jasmine.getEnv().execute();
-  </script>
 </body>
 </html>

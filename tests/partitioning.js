@@ -52,6 +52,11 @@ describe("Partitioning Function:", function() {
 	  it("should not return later items that pass query", function () {
 	    expect(Query.from([1, 2, 3, 1]).takeWhile(function (item) { return item < 2; }).count()).toBe(1);
 	  });
+
+	  it("should accept predicate object", function() {
+	  	var items = [{ name: "Jim" }, { name: "John" }, { name: "Josh" }];
+	  	expect(Query.from(items).takeWhile({ name: "Jim" }).count()).toBe(1);
+	  });
 	});
 
 	describe("When skipping while from query", function () {
@@ -70,6 +75,48 @@ describe("Partitioning Function:", function() {
 	  it("should not return later items that pass query", function () {
 	    expect(Query.from([1, 2, 3, 1]).skipWhile(function (item) { return item < 2; }).count()).toBe(3);
 	  });
+
+	  it("should accept predicate object", function() {
+	  	var items = [{ name: "Jim" }, { name: "John" }, { name: "Josh" }];
+	  	expect(Query.from(items).skipWhile({ name: "Jim" }).count()).toBe(2);
+	  });
 	});
 
+	describe("When shuffling a query", function() {
+		it ("should return a Query object", function() {
+			expect(Query.from([1,2,3,4,5,6,7,8]).shuffle() instanceof Query).toBeTruthy();
+		});
+
+		it("should return same number of items", function() {
+			expect(Query.from([1,2,3,4,5,6,7,8]).shuffle().length).toBe(8);
+		})
+
+		it("should return in a different sequence", function() {
+			var orig = [1,2,3,4,5,6,7,8];
+			var shuffled = Query.from(orig).shuffle();
+			expect(shuffled.sequenceEquals(orig)).toBeFalsy();
+		});
+
+		it("should return all of the same items", function() {
+			var orig = [1,2,3,4,5,6,7,8];
+			var shuf1 = Query.from(orig).shuffle();
+			var shuf2 = Query.from(orig).shuffle();
+			expect(shuf1.sequenceEquals(shuf2)).toBeFalsy();
+		});
+
+		it("should contain all of the items", function() {
+			var orig = [1,2,3,4,5,6,7,8];
+			var shuf = Query.from(orig).shuffle();
+			orig.forEach(function(v) {
+				expect(shuf.contains(v)).toBeTruthy();
+			});
+		});
+
+		it("should not alter original query", function() {
+			var orig = [1,2,3,4,5,6,7,8];
+			var q = Query.from(orig);
+			q.shuffle();
+			expect(q.sequenceEquals(orig)).toBeTruthy();
+		});
+	});
 });

@@ -22,6 +22,11 @@ describe("Qualifier Functions:", function() {
 	  it("should return false if selector function has no match", function () {
 	    expect(q.any(function (item) { return item === 4; })).toBeFalsy();
 	  });
+
+	  it("should accept predicate object", function() {
+	  	var items = [{ name: "Jim" }, { name: "John" }, { name: "Josh" }];
+	  	expect(Query.from(items).any({ name: "Josh" })).toBeTruthy();
+	  });
 	});
 
 	describe("When calling 'all'", function () {
@@ -31,6 +36,11 @@ describe("Qualifier Functions:", function() {
 
 	  it("should be false if not all items apply", function () {
 	    expect(Query.from([1, 2, 3]).all(function (item) { return item > 1; })).toBeFalsy();
+	  });
+
+	  it("should accept predicate object", function() {
+	  	var items = [{ name: "Jim" }, { name: "John" }, { name: "Josh" }];
+	  	expect(Query.from(items).all({ name: "Josh" })).toBeFalsy();
 	  });
 	});
 
@@ -69,5 +79,4 @@ describe("Qualifier Functions:", function() {
 	    expect(Query.from([{ id: 1, name: "Joe Blow" }, { id: 2, name: "Jane Doe" }]).sequenceEquals([{ id: 1 }, { id: 2 }], function (a, b) { return a.id === b.id; })).toBeTruthy();
 	  });
 	});
-
 });

@@ -13,9 +13,14 @@ describe("Filtering Functions:", function() {
 	    expect(Query.from([1, 2, 3]).where(function (v) { return v >= 2; }).count()).toBe(2);
 	  });
 
-	  it("should return a new instance when no selector is passed in", function () {
+	  it("should return same instance when no selector is passed in", function () {
 	    var original = Query.from([1, 2, 3]);
-	    expect(original.where() === original).toBeFalsy();
+	    expect(original.where() === original).toBeTruthy();
+	  });
+
+	  it("should accept predicate object", function() {
+	  	var items = [{ name: "Jim" }, { name: "John" }, { name: "Josh" }];
+	  	expect(Query.from(items).where({ name: "Josh" }).count()).toBe(1);
 	  });
 	});
 
@@ -41,7 +46,12 @@ describe("Filtering Functions:", function() {
 	  });
 
 	  it("should allow you to just pass a default", function () {
-	    expect(Query.from([1, 2, 3]).first(99)).toBe(1);
+	    expect(Query.from([1, 2, 3]).first(null, 99)).toBe(1);
+	  });
+
+	  it("should accept predicate object", function() {
+	  	var items = [{ name: "Jim" }, { name: "John" }, { name: "Josh" }];
+	  	expect(Query.from(items).first({ name: "Josh" }).name).toBe("Josh");
 	  });
 	});
 
@@ -65,6 +75,11 @@ describe("Filtering Functions:", function() {
 	  it("should return default value when no item matches and default is specified", function () {
 	    expect(Query.from([1, 2, 3]).last(function (item) { return item === 4; }, 0)).toBe(0);
 	  });
+
+	  it("should accept predicate object", function() {
+	  	var items = [{ name: "Jim" }, { name: "John" }, { name: "Josh" }];
+	  	expect(Query.from(items).last({ name: "Josh" }).name).toBe("Josh");
+	  });
 	});
 
 	describe("When selecting 'single' item", function () {
@@ -82,6 +97,11 @@ describe("Filtering Functions:", function() {
 
 	  it("should return default value if no item matching function and default passed in", function () {
 	    expect(Query.from([1, 2, 3]).single(function (item) { return item === 0; }, 0)).toEqual(0);
+	  });
+
+	  it("should accept predicate object", function() {
+	  	var items = [{ name: "Jim" }, { name: "John" }, { name: "Josh" }];
+	  	expect(Query.from(items).single({ name: "Josh" }).name).toBe("Josh");
 	  });
 	});
 
